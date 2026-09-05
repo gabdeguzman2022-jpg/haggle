@@ -259,6 +259,15 @@ export default function SettingsScreen() {
           tracker is entirely self-reported: it's what you told us your bill was, minus what you
           told us it became, times twelve. Haggle doesn't verify it and doesn't project it forward.
         </Text>
+
+        <Hairline />
+
+        <Text style={[typography.body, styles.sectionHeader]}>Company names</Text>
+        <Text style={[typography.body, styles.paragraph]}>
+          Haggle isn't affiliated with, endorsed by, or connected to any provider it names.
+          Company and product names are used only to identify who you're calling and what to
+          ask them for. All trademarks belong to their respective owners.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
