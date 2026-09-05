@@ -11,6 +11,7 @@ import {
   selectTactic,
   computeTargetMonthlyAmount,
   computeProjectedAnnualSavings,
+  anchorTargetToCompetitor,
   stableHash,
   LOYALTY_TENURE_THRESHOLD_MONTHS,
 } from './scriptEngine';
@@ -467,5 +468,63 @@ describe('provider dataset', () => {
       assert.ok(result.opening.length > 0);
       assert.ok(result.targetMonthlyAmount < result.currentMonthlyAmount);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Competitor anchoring: the ask must never contradict the quote it cites.
+// ---------------------------------------------------------------------------
+
+describe('competitor anchoring', () => {
+  test('a quote below the computed target becomes the ask, rather than leaving money on the table', () => {
+    assert.strictEqual(anchorTargetToCompetitor(89, 74, { provider: 'Fios', monthlyAmount: 55 }), 55);
+  });
+
+  test('a quote above the computed target leaves the computed target alone, since we already beat it', () => {
+    assert.strictEqual(anchorTargetToCompetitor(89, 62, { provider: 'Fios', monthlyAmount: 80 }), 62);
+  });
+
+  test('an implausible quote is floored so the ask stays credible', () => {
+    // 40% of 89 is 35.6 -> 36. A $5 quote must not produce a $5 ask.
+    assert.strictEqual(anchorTargetToCompetitor(89, 74, { provider: 'Fios', monthlyAmount: 5 }), 36);
+  });
+
+  test('no quote, or a nonsense quote, leaves the computed target untouched', () => {
+    assert.strictEqual(anchorTargetToCompetitor(89, 74, undefined), 74);
+    assert.strictEqual(anchorTargetToCompetitor(89, 74, { provider: 'Fios', monthlyAmount: 0 }), 74);
+    assert.strictEqual(anchorTargetToCompetitor(89, 74, { provider: 'Fios', monthlyAmount: -10 }), 74);
+  });
+
+  test('the generated ask never claims to match a number it is not asking for', () => {
+    const result = generateScript({
+      category: 'internet',
+      provider: 'Xfinity',
+      currentMonthlyAmount: 89,
+      trigger: 'promo_expired',
+      tenureMonths: 38,
+      competitorOffer: { provider: 'Verizon Fios', monthlyAmount: 55 },
+    });
+
+    assert.strictEqual(result.tactic, 'competitor_anchor');
+    assert.strictEqual(result.targetMonthlyAmount, 55);
+    // Whichever phrasing the hash picks, the asked-for number must appear and
+    // must not be undercut by a promise to beat a lower figure.
+    assert.match(result.ask, /\$55\b/);
+    assert.doesNotMatch(result.ask, /beat/i);
+  });
+
+  test('an insurance script with a competing quote keeps its own tactic and computed target', () => {
+    const result = generateScript({
+      category: 'insurance',
+      provider: 'Progressive',
+      currentMonthlyAmount: 142,
+      trigger: 'rate_increase',
+      tenureMonths: 60,
+      competitorOffer: { provider: 'GEICO', monthlyAmount: 90 },
+    });
+
+    assert.strictEqual(result.tactic, 'insurance_shopping');
+    assert.notStrictEqual(result.targetMonthlyAmount, 90);
+    assert.ok(result.targetMonthlyAmount < result.currentMonthlyAmount);
   });
 });

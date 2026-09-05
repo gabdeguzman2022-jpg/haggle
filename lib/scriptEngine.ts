@@ -154,6 +154,40 @@ export function computeTargetMonthlyAmount(current: number, range: DiscountRange
 }
 
 /**
+ * The share of the current bill below which a competitor-anchored ask stops
+ * being credible. A quote this far under the current price is almost always a
+ * typo or a different service tier, and asking for it makes the caller sound
+ * unserious.
+ */
+const ANCHOR_FLOOR_RATIO = 0.4;
+
+/**
+ * Anchors the ask to a competing quote.
+ *
+ * A written quote justifies asking for that exact price, so when the quote
+ * undercuts the generic computed target we ask for the quote instead — asking
+ * for more than your own leverage supports leaves money on the table, and it
+ * makes the script contradict itself ("beat this offer" while naming a higher
+ * number). When the quote is above what we would have asked for anyway, the
+ * computed target stands, because we can already beat it.
+ *
+ * Floored at {@link ANCHOR_FLOOR_RATIO} of the current bill so an implausible
+ * entry cannot produce an absurd ask.
+ */
+export function anchorTargetToCompetitor(
+  current: number,
+  computedTarget: number,
+  competitor?: CompetitorOffer,
+): number {
+  if (!competitor) return computedTarget;
+  const quote = competitor.monthlyAmount;
+  if (!Number.isFinite(quote) || quote <= 0) return computedTarget;
+  if (quote >= computedTarget) return computedTarget;
+  const floor = Math.round(Math.max(0, current) * ANCHOR_FLOOR_RATIO);
+  return Math.max(quote, floor);
+}
+
+/**
  * The projected annual savings, as a range — never a single guaranteed
  * number, per the product's honesty rule. This is the full realistic band
  * (current amount x the provider's whole discount range x 12 months), not
@@ -238,12 +272,24 @@ function buildCompetitorAnchor(ctx: Ctx): Beats {
     `I'll stay if you can get close to ${formatMoney(competitor.monthlyAmount)} a month; otherwise I'm switching this week.`,
   ];
 
-  const asks = [
-    `Can you get me to ${formatMoney(target)} a month, close to what ${competitor.provider} quoted?`,
-    `Match me at ${formatMoney(target)} a month and I'll stay with ${provider.name} today.`,
-    `Can we settle at ${formatMoney(target)} a month? That's fair given the ${competitor.provider} quote.`,
-    `I'd like ${formatMoney(target)} a month. Beat the competing offer and I won't need to switch.`,
+  // Two pools, because the ask has to stay truthful about the quote. When the
+  // target IS the quote we are asking them to match it; when the two numbers
+  // differ we name both rather than claiming a match that isn't one.
+  const matchAsks = [
+    `Match the ${competitor.provider} quote at ${formatMoney(target)} a month and I'll stay with ${provider.name} today.`,
+    `Can you match ${competitor.provider} at ${formatMoney(target)} a month?`,
+    `Can we settle at ${formatMoney(target)} a month, the same as the ${competitor.provider} quote?`,
+    `I'd like ${formatMoney(target)} a month, matching what ${competitor.provider} offered. Do that and I won't switch.`,
   ];
+
+  const compareAsks = [
+    `Can you get me to ${formatMoney(target)} a month? ${competitor.provider} quoted me ${formatMoney(competitor.monthlyAmount)}.`,
+    `I'd like ${formatMoney(target)} a month. I have ${competitor.provider} at ${formatMoney(competitor.monthlyAmount)} in writing.`,
+    `Can we settle at ${formatMoney(target)} a month? That keeps me here instead of taking the ${formatMoney(competitor.monthlyAmount)} quote.`,
+    `Get me to ${formatMoney(target)} a month and I'll stay with ${provider.name} rather than switch to ${competitor.provider}.`,
+  ];
+
+  const asks = target === competitor.monthlyAmount ? matchAsks : compareAsks;
 
   const objectionPool: ObjectionPair[] = [
     {
@@ -570,7 +616,14 @@ export function generateScript(input: BillInput): ScriptResult {
   // Hash seed is provider + category, exactly as product-spec.md's
   // script_architecture_decision specifies for phrasing-pool selection.
   const seed = `${input.provider.trim().toLowerCase()}|${input.category}`;
-  const target = computeTargetMonthlyAmount(input.currentMonthlyAmount, provider.discountPercent, seed);
+  const computedTarget = computeTargetMonthlyAmount(input.currentMonthlyAmount, provider.discountPercent, seed);
+  // Only the competitor tactic anchors to a quote. Insurance keeps the
+  // computed target because its script argues discounts and shopping, not a
+  // single price match.
+  const target =
+    tactic === 'competitor_anchor'
+      ? anchorTargetToCompetitor(input.currentMonthlyAmount, computedTarget, input.competitorOffer)
+      : computedTarget;
   const ctx: Ctx = { input, vocab, provider, seed, target };
 
   let beats: Beats;
