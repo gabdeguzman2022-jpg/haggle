@@ -2,13 +2,13 @@
 
 Type in a bill you're overpaying on. Get the exact words to say on the phone to lower it.
 
-Haggle writes you a negotiation script — who to ask for, how to get past the phone menu to them, what to open with, what to say when they push back, and how to get the new rate confirmed in writing. You make the call yourself and keep everything you save.
+Haggle writes you a negotiation script who to ask for, how to get past the phone menu to them, what to open with, what to say when they push back, and how to get the new rate confirmed in writing. You make the call yourself and keep everything you save.
 
 Built for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/) Next Gen award.
 
 ## Why this exists
 
-Every bill-negotiation service on the market — BillShark, BillCutterz, Trim, Experian BillFixer — negotiates on your behalf and takes **30–50% of your savings**, or bundles the service into a paid membership. They're done-for-you services.
+Every bill-negotiation service on the market — BillShark, BillCutterz, Trim, Experian BillFixer negotiates on your behalf and takes **30–50% of your savings**, or bundles the service into a paid membership. They're done-for-you services.
 
 Nobody sells the other thing: a cheap flat-rate tool that does the homework and hands it to you. If you save $30 a month on your internet bill, you keep all $360 of it.
 
@@ -37,7 +37,7 @@ An LLM layer for personalization is a post-hackathon idea, not a gap.
 
 RevenueCat powers a single `premium` entitlement.
 
-Your **first script is completely free** — the whole thing, not a preview. You feel the product work before anything asks you for money. Premium unlocks additional bills, renegotiation reminders (rates quietly creep back up after 12 months), and a self-reported savings tracker.
+Your **first script is completely free** the whole thing, not a preview. You feel the product work before anything asks you for money. Premium unlocks additional bills, renegotiation reminders (rates quietly creep back up after 12 months), and a self-reported savings tracker.
 
 The paywall is hand-built in [`app/paywall.tsx`](app/paywall.tsx) rather than configured remotely, so its design lives in this repository like everything else.
 
@@ -76,7 +76,7 @@ docs/       the design system and product spec these were built against
 
 ## Honesty
 
-Savings figures are sourced ranges of what comparable callers have negotiated — never a promise about your bill. The savings tracker is self-reported: what you told Haggle you were paying, minus what you told it you now pay. Nothing is verified or projected.
+Savings figures are sourced ranges of what comparable callers have negotiated never a promise about your bill. The savings tracker is self-reported: what you told Haggle you were paying, minus what you told it you now pay. Nothing is verified or projected.
 
 Scripts are generated on your device. There's no account, no server, and no bill data leaves your phone.
 
