@@ -8,7 +8,7 @@ Built for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpos
 
 ## Why this exists
 
-Every bill-negotiation service on the market — BillShark, BillCutterz, Trim, Experian BillFixer negotiates on your behalf and takes **30–50% of your savings**, or bundles the service into a paid membership. They're done-for-you services.
+Every bill-negotiation service on the market BillShark, BillCutterz, Trim, Experian BillFixer negotiates on your behalf and takes **30–50% of your savings**, or bundles the service into a paid membership. They're done-for-you services.
 
 Nobody sells the other thing: a cheap flat-rate tool that does the homework and hands it to you. If you save $30 a month on your internet bill, you keep all $360 of it.
 
